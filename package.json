@@ -1,0 +1,17 @@
+{
+  "name": "asisten-ferdi-wa",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "dependencies": {
+    "@hapi/boom": "^10.0.1",
+    "@whiskeysockets/baileys": "^7.0.0-rc14",
+    "pino": "^10.3.1",
+    "qrcode-terminal": "^0.12.0",
+    "sharp": "^0.35.4"
+  }
+}
