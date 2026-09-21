@@ -8,7 +8,6 @@ import { Boom } from "@hapi/boom";
 import fs from "fs";
 import pino from "pino";
 import qrcode from "qrcode-terminal";
-import readline from "readline";
 import { config } from "./config.js";
 
 let prefix = config.prefix;
@@ -23,9 +22,6 @@ let messageHandler = null;
 let reloadTimer = null;
 let configReloadTimer = null;
 let ownerReloadTimer = null;
-
-const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-const ask = (question) => new Promise((resolve) => rl.question(question, resolve));
 
 const terminalColors = {
     reset: "\x1b[0m",
@@ -166,34 +162,10 @@ async function startBot() {
     });
     socketStarting = false;
 
-    let pairingAsked = false;
     sock.ev.on("connection.update", async ({ connection, lastDisconnect, qr }) => {
-        if (qr && !state.creds.registered && !pairingAsked) {
-            pairingAsked = true;
-            terminalLog("info", "pairing", "[1] Pairing Code   [2] QR Code");
-            const method = (await ask("Pilih metode [1/2]: ")).trim();
-            if (method === "2") {
-                qrcode.generate(qr, { small: true });
-            } else {
-                const enteredPhone = (await ask(`Nomor bot format 62 atau 08 [${config.pairingNumber}]: `)).replace(/\D/g, "");
-                const phone = normalizeNumber(enteredPhone || config.pairingNumber);
-                if (!phone.startsWith("62") || phone.length < 10 || phone.length > 15) {
-                    terminalLog("error", "pairing", "Nomor harus memakai format 62 atau 08 yang valid");
-                    pairingAsked = false;
-                    return;
-                }
-                setTimeout(async () => {
-                    try {
-                        const pairingCode = String(await sock.requestPairingCode(phone)).replace(/\s/g, "").toUpperCase();
-                        terminalLog("success", "pairing", `Kode WhatsApp: ${pairingCode}`);
-                        terminalLog("info", "pairing", "Masukkan kode di WhatsApp > Perangkat tertaut");
-                        terminalLog("wait", "pairing", "Jangan hentikan terminal sampai bot terhubung");
-                    } catch (error) {
-                        terminalLog("error", "pairing", `Pairing gagal: ${error.message}`);
-                        pairingAsked = false;
-                    }
-                }, 2500);
-            }
+        if (qr && !state.creds.registered) {
+            terminalLog("info", "pairing", "Scan QR code di WhatsApp untuk menghubungkan bot");
+            qrcode.generate(qr, { small: true });
         }
 
         if (connection === "open") {
@@ -244,7 +216,6 @@ async function startBot() {
 }
 
 process.once("SIGINT", () => {
-    rl.close();
     process.exit(0);
 });
 
